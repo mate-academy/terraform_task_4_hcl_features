@@ -1,0 +1,72 @@
+name: Terraform Validate
+
+run-name: ${{ github.actor }} - ${{ github.ref_name }}
+
+on:
+  pull_request:
+    branches: ["main"]
+
+  workflow_dispatch:
+
+jobs:
+  terraform_validate:
+    name: "Format and Validate Code"
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.8.4
+    
+    - name: Terraform Fmt
+      run: terraform fmt -check -recursive -diff
+
+    - name: Check count function
+      run: |
+        if ! grep -Eq 'count\s+=' network.tf; then
+          echo "Count function not found in network.tf!"
+          exit 1
+        fi
+        echo "Count function is present."
+
+    - name: Check for_each function
+      run: |
+        if ! grep -Eq 'for_each\s+=' vmss.tf; then
+          echo "For_each function not found in vmss.tf!"
+          exit 1
+        fi
+        echo "For_each function is present."
+
+    - name: Check lifecycle block
+      run: |
+        if ! grep -q 'lifecycle {' ./*.tf; then
+          echo "lifecycle block not found!"
+          exit 1
+        fi
+        echo "lifecycle block is present."
+
+    - name: Check dynamic blocks
+      run: |
+        if ! grep -q 'dynamic "security_rule"' ./*.tf; then
+          echo "dynamic blocks for network security rules not found!"
+          exit 1
+        fi
+        echo "dynamic blocks are present."
+
+    - name: Check built-in functions usage
+      run: |
+        if ! grep -q 'upper(' ./*.tf || ! grep -q 'join(' ./*.tf || ! grep -q '\[for' ./*.tf; then
+          echo "built-in functions not used correctly!"
+          exit 1
+        fi
+        echo "built-in functions are present."
+  
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Validate
+      run: terraform validate

@@ -1,0 +1,72 @@
+name: Terraform Validate
+
+run-name: ${{ github.actor }} - ${{ github.ref_name }}
+
+on:
+  pull_request:
+    branches: ["main"]
+
+  workflow_dispatch:
+
+jobs:
+  terraform_validate:
+    name: "Format and Validate Code"
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.8.4
+
+    - name: Check count meta-argument
+      run: |
+        if ! grep -q 'count =' ./*.tf; then
+          echo "count meta-argument not found!"
+          exit 1
+        fi
+        echo "count meta-argument is present."
+
+    - name: Check for_each meta-argument
+      run: |
+        if ! grep -q 'for_each =' ./*.tf; then
+          echo "for_each meta-argument not found!"
+          exit 1
+        fi
+        echo "for_each meta-argument is present."
+
+    - name: Check lifecycle block
+      run: |
+        if ! grep -q 'lifecycle {' ./*.tf; then
+          echo "lifecycle block not found!"
+          exit 1
+        fi
+        echo "lifecycle block is present."
+
+    - name: Check dynamic blocks
+      run: |
+        if ! grep -q 'dynamic "security_rule"' ./*.tf; then
+          echo "dynamic blocks for network security rules not found!"
+          exit 1
+        fi
+        echo "dynamic blocks are present."
+
+    - name: Check built-in functions usage
+      run: |
+        if ! grep -q 'upper(' ./*.tf || ! grep -q 'join(' ./*.tf || ! grep -q '\[for' ./*.tf; then
+          echo "built-in functions not used correctly!"
+          exit 1
+        fi
+        echo "built-in functions are present."
+    
+    - name: Terraform Fmt
+      run: terraform fmt -check -recursive -diff
+  
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Validate
+      run: terraform validate

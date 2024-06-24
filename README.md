@@ -1,6 +1,6 @@
-# HCL Language Features with Terraform
+# HCL Features With Terraform
 
-This task involves utilizing various HCL language features such as count, for_each, Terraform lifecycle, dynamic blocks, and built-in functions.
+This task involves utilizing various HCL language features such as `count`, `for_each`, Terraform lifecycle, dynamic blocks, and built-in functions.
 
 ## Prerequisites
 
@@ -25,4 +25,3 @@ This task involves utilizing various HCL language features such as count, for_ea
     * Create an output block that joins multiple tag values into a single string.
     * Create an output block that uses a for loop to get the IDs of all virtual machines.
 7. Organize the Terraform code into multiple files for better readability and maintenance.
-

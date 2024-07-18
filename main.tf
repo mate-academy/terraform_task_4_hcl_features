@@ -36,10 +36,10 @@ resource "azurerm_network_interface" "main" {
 
 resource "azurerm_virtual_machine" "main" {
   count                 = var.is_prod ? 5 : 2
-  name                  = "vm-${count.index}"
+  name                  = "${var.prefix}-vm-${count.index}"
   location              = azurerm_resource_group.task4.location
   resource_group_name   = azurerm_resource_group.task4.name
-  network_interface_ids = [azurerm_network_interface.main[count.index % length(local.nic_names)].id]
+  network_interface_ids = [element(azurerm_network_interface.main.*.id, count.index % length(local.nic_names))]
   vm_size               = "Standard_DS1_v2"
 
   storage_image_reference {

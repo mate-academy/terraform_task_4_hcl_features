@@ -24,12 +24,12 @@ jobs:
 
     - name: Check count meta-argument
       run: |
-        if ! grep -q 'count =' ./*.tf; then
+        if grep -q 'count *= *' ./*.tf; then
+          echo "count meta-argument is present."
+        else
           echo "count meta-argument not found!"
           exit 1
         fi
-        echo "count meta-argument is present."
-
     - name: Check for_each meta-argument
       run: |
         if ! grep -q 'for_each =' ./*.tf; then

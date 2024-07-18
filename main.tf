@@ -23,7 +23,7 @@ locals {
 
 resource "azurerm_network_interface" "main" {
   for_each            = toset(local.nic_names)
-  name                = each.key
+  name                = "${var.prefix}-${each.key}"
   location            = azurerm_resource_group.task4.location
   resource_group_name = azurerm_resource_group.task4.name
 
@@ -35,11 +35,11 @@ resource "azurerm_network_interface" "main" {
 }
 
 resource "azurerm_virtual_machine" "main" {
-  count                 = var.is_prod ? 5 : 2
+  count                 = 3
   name                  = "${var.prefix}-vm-${count.index}"
   location              = azurerm_resource_group.task4.location
   resource_group_name   = azurerm_resource_group.task4.name
-  network_interface_ids = [for nic in azurerm_network_interface.main : nic.id]
+  network_interface_ids = [azurerm_network_interface.main[count.index % length(local.nic_names)].id]
   vm_size               = "Standard_DS1_v2"
 
   storage_image_reference {

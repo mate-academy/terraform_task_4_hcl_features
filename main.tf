@@ -35,8 +35,8 @@ resource "azurerm_network_interface" "main" {
 }
 
 resource "azurerm_virtual_machine" "main" {
-  count                 = 3
-  name                  = "${var.prefix}-vm-${count.index}"
+  count                 = var.is_prod ? 5 : 2
+  name                  = "vm-${count.index}"
   location              = azurerm_resource_group.task4.location
   resource_group_name   = azurerm_resource_group.task4.name
   network_interface_ids = [azurerm_network_interface.main[count.index % length(local.nic_names)].id]

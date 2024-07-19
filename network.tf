@@ -22,8 +22,8 @@ locals {
 }
 
 resource "azurerm_network_interface" "nic" {
-  for_each            = toset(local.nic_name)
-  name                = "${var.prefix}-nic-${each.value}"
+  count               = length(local.nic_name)
+  name                = "${var.prefix}-nic-${count.index + 1}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 

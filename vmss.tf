@@ -1,5 +1,5 @@
 resource "azurerm_virtual_machine" "main" {
-  count = var.prod_is ? 5 : 2
+  count                 = var.prod_is ? 5 : 2
   name                  = "${var.prefix}-vm-${count.index}"
   location              = azurerm_resource_group.ts4.location
   resource_group_name   = azurerm_resource_group.ts4.name

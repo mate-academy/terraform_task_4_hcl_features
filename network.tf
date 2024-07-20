@@ -22,9 +22,10 @@ locals {
 }
 
 resource "azurerm_network_interface" "main" {
-  name                = "${var.prefix}-nic"
-  location            = azurerm_resource_group.ts4.location
-  resource_group_name = azurerm_resource_group.ts4.name
+  count               = length(local.nic_names)
+  name                = "${var.prefix}-nic-${count.index + 1}"
+  location            = azurerm_resource_group.task4.location
+  resource_group_name = azurerm_resource_group.task4.name
 
   ip_configuration {
     name                          = "testconfiguration1"

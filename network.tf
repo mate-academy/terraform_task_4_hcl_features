@@ -18,7 +18,7 @@ resource "azurerm_subnet" "internal" {
 }
 
 locals {
-  nic_names = [ "nic1", "nic2", "nic3" ]
+  nic_names = ["nic1", "nic2", "nic3"]
 }
 
 resource "azurerm_network_interface" "main" {

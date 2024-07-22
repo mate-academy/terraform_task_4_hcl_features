@@ -2,6 +2,18 @@ variable "prefix" {
   default = "tfvmex"
 }
 
+variable "address_space" {
+  type        = string
+  description = "The address space of the vnet"
+  default     = "10.0.0.0/16"
+}
+
+variable "address_prefixes" {
+  type        = string
+  description = "The address prefixes of the subnet"
+  default     = "10.0.2.0/24"
+}
+
 variable "security_rules" {
   description = "List of security rules"
   type = list(object({

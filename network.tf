@@ -18,9 +18,8 @@ resource "azurerm_subnet" "internal" {
 }
 
 resource "azurerm_network_interface" "main" {
-  count               = length(local.nic_names)
-  #name                = "${var.prefix}-nic-${count.index + 1}"
-  name                = local.nic_names[count.index]
+  count = length(local.nic_names)
+  name  = "${var.prefix}-local.nic_names-${count.index + 1}"
   location            = azurerm_resource_group.ts4.location
   resource_group_name = azurerm_resource_group.ts4.name
 

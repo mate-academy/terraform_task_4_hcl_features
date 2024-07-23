@@ -17,12 +17,8 @@ resource "azurerm_subnet" "internal" {
   address_prefixes     = ["10.0.2.0/24"]
 }
 
-locals {
-  nic_names = ["nic1", "nic2", "nic3"]
-}
-
 resource "azurerm_network_interface" "main" {
-  count               = length(local.nic_names)
+  count               = length(locals.nic_names)
   name                = "${var.prefix}-nic-${count.index + 1}"
   location            = azurerm_resource_group.ts4.location
   resource_group_name = azurerm_resource_group.ts4.name

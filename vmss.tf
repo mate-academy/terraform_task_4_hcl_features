@@ -40,7 +40,7 @@ resource "azurerm_network_security_group" "main" {
   resource_group_name = azurerm_resource_group.ts4.name
 
   dynamic "security_rule" {
-    for_each = security_rules.locals
+    for_each = locals.security_rules
     content {
       name                       = security_rule.value.name
       priority                   = security_rule.value.priority

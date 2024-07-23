@@ -9,3 +9,4 @@ output "tags_string" {
 output "vm_ids" {
   value = [for vm in azurerm_virtual_machine.vm : vm.id]
 }
+

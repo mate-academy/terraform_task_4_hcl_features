@@ -17,10 +17,6 @@ resource "azurerm_subnet" "internal" {
   address_prefixes     = ["10.0.2.0/24"]
 }
 
-locals {
-  nic_names = ["nic1", "nic2", "nic3"]
-}
-
 resource "azurerm_network_interface" "main" {
   count               = length(local.nic_names)
   name                = local.nic_names[count.index]

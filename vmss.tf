@@ -67,15 +67,15 @@ resource "azurerm_network_security_group" "example" {
     for_each = local.security_rules
 
     content {
-      name                       = "rule-${security_rule.key}"
-      priority                   = index(local.security_rules, security_rule.value) + 100
-      direction                  = security_rule.value.type
-      access                     = "Allow"
+      name                       = security_rule.value.name
+      priority                   = security_rule.value.priority
+      direction                  = security_rule.value.direction
+      access                     = security_rule.value.access
       protocol                   = security_rule.value.protocol
-      source_port_range          = "*"
-      destination_port_range     = "${security_rule.value.from_port}-${security_rule.value.to_port}"
-      source_address_prefix      = "*"
-      destination_address_prefix = security_rule.value.cidr_blocks[0]
+      source_port_range          = security_rule.value.source_port_range
+      destination_port_range     = security_rule.value.destination_port_range
+      source_address_prefix      = security_rule.value.source_address_prefix
+      destination_address_prefix = security_rule.value.destination_address_prefix
     }
   }
 }

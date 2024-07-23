@@ -1,11 +1,11 @@
 variable "prefix" {
-  description = "dev"
+  description = "prefix"
   type = string
   default = "tfvmex"
 }
 
 variable "prod_is" {
-  description = "prod"
-  type = string
+  description = "prod_is"
+  type = bool
   default = false
 }

@@ -38,7 +38,7 @@ jobs:
       
     - name: Check local value for network interface names
       run: |
-        if ! grep -q 'locals {' *.tf || ! grep -Eq '(nic_names|network_interface_names)' *.tf; then
+        if ! grep -q 'locals {' *.tf || ! grep -Eq '(nic-names|network_interface_names)' *.tf; then
           echo "Local value for network interface names not found!"
           exit 1
         fi
@@ -62,7 +62,7 @@ jobs:
 
     - name: Check local value for security rules
       run: |
-        if ! grep -q 'locals {' *.tf || ! grep -Eq '(security_rules|nsg_rules)' *.tf; then
+        if ! grep -q 'locals {' *.tf || ! grep -Eq '(security-rules|nsg_rules)' *.tf; then
           echo "Local value for security rules not found!"
           exit 1
         fi
@@ -70,7 +70,7 @@ jobs:
 
     - name: Check built-in functions usage
       run: |
-        if ! grep -q 'upper(' *.tf || ! grep -q 'join(' *.tf || ! grep -Eq '\[for.*:' *.tf; then
+        if ! grep -q 'upper(' *.tf || ! grep -q 'join(' *.tf || ! grep -Pzo '\[\s*.*for.*:' *.tf; then
           echo "Required built-in functions not used correctly!"
           exit 1
         fi

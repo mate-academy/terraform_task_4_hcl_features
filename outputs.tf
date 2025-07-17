@@ -14,15 +14,10 @@ output "tags_joined_per_vm" {
   ]
 }
 
-output "all_vm_ids_count" {
-  description = "ID всіх VM (через count)"
-  value       = azurerm_virtual_machine.main[*].id
-}
-
-output "all_vm_ids_for_each" {
-  description = "ID всіх VM (через for_each)"
-  value = [
-    for vm in values(azurerm_virtual_machine.main) :
-    vm.id
-  ]
+output "all_vm_ids" {
+  value = try(
+    azurerm_virtual_machine.main[*].id,
+    # Якщо помилка (тому що for_each), – переходимо сюди:
+    [for vm in values(azurerm_virtual_machine.main) : vm.id]
+  )
 }

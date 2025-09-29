@@ -3,7 +3,8 @@ variable "prefix" {
 }
 
 variable "network_interface_names" {
-  default = ["1-nic", "2-nic", "3-nic"]
+  type    = list(string)
+  default = ["vm-1", "vm-2", "vm-3"]
 }
 
 variable "security_rules" {

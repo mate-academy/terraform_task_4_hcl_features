@@ -1,9 +1,15 @@
+locals {
+  vm_names = tolist(var.network_interface_names)
+
+  nic_ids = [for name in local.vm_names : azurerm_network_interface.main[name].id]
+}
+
 resource "azurerm_virtual_machine" "main" {
-  count                 = 3
-  name                  = "${var.prefix}-vm-${count.index}"
+  count                 = length(local.vm_names)
+  name                  = "${var.prefix}-${local.vm_names[count.index]}"
   location              = azurerm_resource_group.example.location
   resource_group_name   = azurerm_resource_group.example.name
-  network_interface_ids = [azurerm_network_interface.main[count.index].id]
+  network_interface_ids = [local.nic_ids[count.index]]
   vm_size               = "Standard_DS1_v2"
 
   storage_image_reference {

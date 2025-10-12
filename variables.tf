@@ -1,20 +1,29 @@
 variable "prefix" {
-  default = "tfvmex"
+  description = "Prefix for resource names"
+  type        = string
+  default     = "tfvmex"
 }
 
 variable "vm_count" {
   description = "Number of VMs to create"
+  type        = number
   default     = 2
 }
 
 variable "location" {
-  default = "West Europe"
+  description = "Azure region for resources"
+  type        = string
+  default     = "West Europe"
 }
 
 variable "admin_username" {
-  default = "testadmin"
+  description = "Admin username for VMs"
+  type        = string
+  default     = "testadmin"
 }
 
 variable "admin_password" {
-  default = "Password1234!"
+  description = "Admin password for VMs"
+  type        = string
+  sensitive   = true
 }

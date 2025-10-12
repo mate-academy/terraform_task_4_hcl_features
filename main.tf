@@ -55,7 +55,7 @@ resource "azurerm_virtual_machine" "main" {
     local.common_tags,
     {
       Name  = "${var.prefix}-vm-${count.index}"
-      index = count.index
+      index = tostring(count.index)
     }
   )
 }

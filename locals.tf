@@ -1,10 +1,5 @@
 locals {
-  # List of network interface names for for_each
-  nic_names = toset([
-    "nic-web",
-    "nic-app",
-    "nic-db"
-  ])
+  nic_names = ["nic-web", "nic-app", "nic-db"]
 
   # Network security rules for dynamic blocks
   security_rules = [

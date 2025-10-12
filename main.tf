@@ -1,4 +1,6 @@
-# Multiple VMs using count meta-argument
+# Network interfaces for VMs using count meta-argument
+# These NICs are separate from foreach_nics to demonstrate both meta-arguments
+# Each VM created with count gets its own dedicated NIC
 resource "azurerm_network_interface" "count_nics" {
   count               = var.vm_count
   name                = "${var.prefix}-nic-${count.index}"
@@ -14,6 +16,7 @@ resource "azurerm_network_interface" "count_nics" {
   tags = local.common_tags
 }
 
+# Multiple VMs using count meta-argument
 resource "azurerm_virtual_machine" "main" {
   count                 = var.vm_count
   name                  = "${var.prefix}-vm-${count.index}"

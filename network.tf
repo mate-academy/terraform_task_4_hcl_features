@@ -42,9 +42,10 @@ resource "azurerm_network_security_group" "main" {
   tags = local.common_tags
 }
 
-# Multiple network interfaces using for_each
+# Multiple network interfaces using for_each with stable map
+# These NICs demonstrate the for_each meta-argument as required by the assignment
 resource "azurerm_network_interface" "foreach_nics" {
-  for_each            = local.nic_names
+  for_each            = { for n in local.nic_names : n => n }
   name                = "${var.prefix}-${each.key}"
   location            = azurerm_resource_group.example.location
   resource_group_name = azurerm_resource_group.example.name
@@ -60,6 +61,6 @@ resource "azurerm_network_interface" "foreach_nics" {
 
 # Associate NSG with subnet
 resource "azurerm_subnet_network_security_group_association" "main" {
-  subnet_id                 = azurerm_subnet.internal.id
+  subnet_id                 = azurerm_network_security_group.main.id
   network_security_group_id = azurerm_network_security_group.main.id
 }

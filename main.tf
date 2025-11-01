@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     azurerm = {
-      source = "hashicorp/azurerm"
+      source  = "hashicorp/azurerm"
       version = "3.105.0"
     }
   }
@@ -9,10 +9,6 @@ terraform {
 
 provider "azurerm" {
   features {}
-}
-
-variable "prefix" {
-  default = "tfvmex"
 }
 
 resource "azurerm_resource_group" "example" {
@@ -34,8 +30,14 @@ resource "azurerm_subnet" "internal" {
   address_prefixes     = ["10.0.2.0/24"]
 }
 
+
+locals {
+  nic_names = ["nic-1", "nic-2"]
+}
+
 resource "azurerm_network_interface" "main" {
-  name                = "${var.prefix}-nic"
+  for_each            = toset(local.nic_names)
+  name                = each.value
   location            = azurerm_resource_group.example.location
   resource_group_name = azurerm_resource_group.example.name
 
@@ -46,12 +48,61 @@ resource "azurerm_network_interface" "main" {
   }
 }
 
+locals {
+  security_rules = [
+    {
+      name                       = "Allow-SSH"
+      priority                   = 100
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "22"
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    },
+    {
+      name                       = "Allow-HTTP"
+      priority                   = 200
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "80"
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    }
+  ]
+}
+
+resource "azurerm_network_security_group" "example" {
+  name                = "example-nsg"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+
+  dynamic "security_rule" {
+    for_each = local.security_rules
+    content {
+      name                       = security_rule.value.name
+      priority                   = security_rule.value.priority
+      direction                  = security_rule.value.direction
+      access                     = security_rule.value.access
+      protocol                   = security_rule.value.protocol
+      source_port_range          = security_rule.value.source_port_range
+      destination_port_range     = security_rule.value.destination_port_range
+      source_address_prefix      = security_rule.value.source_address_prefix
+      destination_address_prefix = security_rule.value.destination_address_prefix
+    }
+  }
+}
+
 resource "azurerm_virtual_machine" "main" {
-  name                  = "${var.prefix}-vm"
+  count                 = 3
+  name                  = "${var.prefix}-vm-${each.key}"
   location              = azurerm_resource_group.example.location
   resource_group_name   = azurerm_resource_group.example.name
-  network_interface_ids = [azurerm_network_interface.main.id]
-  vm_size               = "Standard_DS1_v2"
+  network_interface_ids = [each.value.id]
+  vm_size               = "Standard_B2s"
 
   storage_image_reference {
     publisher = "Canonical"
@@ -60,7 +111,7 @@ resource "azurerm_virtual_machine" "main" {
     version   = "latest"
   }
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "myosdisk1-${each.key}"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
@@ -76,4 +127,9 @@ resource "azurerm_virtual_machine" "main" {
   tags = {
     environment = "staging"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
+
+

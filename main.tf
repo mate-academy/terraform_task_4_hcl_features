@@ -1,20 +1,3 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source = "hashicorp/azurerm"
-      version = "3.105.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-variable "prefix" {
-  default = "tfvmex"
-}
-
 resource "azurerm_resource_group" "example" {
   name     = "${var.prefix}-resources"
   location = "West Europe"
@@ -34,23 +17,31 @@ resource "azurerm_subnet" "internal" {
   address_prefixes     = ["10.0.2.0/24"]
 }
 
+# 🔹 for_each для кількох NIC
+locals {
+  nic_names = ["nic-a", "nic-b"]
+}
+
 resource "azurerm_network_interface" "main" {
-  name                = "${var.prefix}-nic"
+  for_each            = toset(local.nic_names)
+  name                = "${var.prefix}-${each.key}"
   location            = azurerm_resource_group.example.location
   resource_group_name = azurerm_resource_group.example.name
 
   ip_configuration {
-    name                          = "testconfiguration1"
+    name                          = "ipconfig-${each.key}"
     subnet_id                     = azurerm_subnet.internal.id
     private_ip_address_allocation = "Dynamic"
   }
 }
 
+# 🔹 count для кількох ВМ
 resource "azurerm_virtual_machine" "main" {
-  name                  = "${var.prefix}-vm"
+  count                 = 2
+  name                  = "${var.prefix}-vm-${count.index}"
   location              = azurerm_resource_group.example.location
   resource_group_name   = azurerm_resource_group.example.name
-  network_interface_ids = [azurerm_network_interface.main.id]
+  network_interface_ids = [element(values(azurerm_network_interface.main)[*].id, count.index)]
   vm_size               = "Standard_DS1_v2"
 
   storage_image_reference {
@@ -59,21 +50,30 @@ resource "azurerm_virtual_machine" "main" {
     sku       = "22_04-lts"
     version   = "latest"
   }
+
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "myosdisk-${count.index}"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
   }
+
   os_profile {
-    computer_name  = "hostname"
+    computer_name  = "hostname-${count.index}"
     admin_username = "testadmin"
     admin_password = "Password1234!"
   }
+
   os_profile_linux_config {
     disable_password_authentication = false
   }
+
   tags = {
     environment = "staging"
+    owner       = "danyil"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }

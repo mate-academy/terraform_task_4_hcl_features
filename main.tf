@@ -1,79 +1,104 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source = "hashicorp/azurerm"
-      version = "3.105.0"
-    }
-  }
+
+
+############################
+# Resource Group
+############################
+resource "azurerm_resource_group" "rg" {
+  name     = var.resource_group_name
+  location = var.location
+  tags     = local.common_tags
 }
 
-provider "azurerm" {
-  features {}
+############################
+# VNET + Subnet
+############################
+resource "azurerm_virtual_network" "vnet" {
+  name                = "vnet-hcl-demo"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  address_space       = ["10.42.0.0/16"]
+  tags                = local.common_tags
 }
 
-variable "prefix" {
-  default = "tfvmex"
+resource "azurerm_subnet" "subnet" {
+  name                 = "subnet-default"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.42.1.0/24"]
 }
 
-resource "azurerm_resource_group" "example" {
-  name     = "${var.prefix}-resources"
-  location = "West Europe"
+############################
+# Public IP (для nic-a)
+############################
+resource "azurerm_public_ip" "pip" {
+  name                = "pip-hcl-demo"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  tags                = local.common_tags
 }
 
-resource "azurerm_virtual_network" "main" {
-  name                = "${var.prefix}-network"
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
-}
-
-resource "azurerm_subnet" "internal" {
-  name                 = "internal"
-  resource_group_name  = azurerm_resource_group.example.name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = ["10.0.2.0/24"]
-}
-
-resource "azurerm_network_interface" "main" {
-  name                = "${var.prefix}-nic"
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
+############################
+# NIC через for_each
+############################
+resource "azurerm_network_interface" "nic" {
+  for_each            = toset(local.nic_names)
+  name                = each.value
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  tags                = local.common_tags
 
   ip_configuration {
-    name                          = "testconfiguration1"
-    subnet_id                     = azurerm_subnet.internal.id
+    name                          = "ipcfg"
     private_ip_address_allocation = "Dynamic"
+    subnet_id                     = azurerm_subnet.subnet.id
+    public_ip_address_id          = each.value == "nic-a" ? azurerm_public_ip.pip.id : null
   }
 }
 
-resource "azurerm_virtual_machine" "main" {
-  name                  = "${var.prefix}-vm"
-  location              = azurerm_resource_group.example.location
-  resource_group_name   = azurerm_resource_group.example.name
-  network_interface_ids = [azurerm_network_interface.main.id]
-  vm_size               = "Standard_DS1_v2"
 
-  storage_image_reference {
+
+resource "azurerm_network_interface_security_group_association" "nic_a_nsg" {
+  network_interface_id      = azurerm_network_interface.nic["nic-a"].id
+  network_security_group_id = azurerm_network_security_group.nsg.id
+}
+
+
+
+resource "azurerm_linux_virtual_machine" "vm" {
+  count               = var.vm_count
+  name                = format("vm%02d", count.index + 1)
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  size                = "Standard_B1s"
+  admin_username      = var.vm_admin_username
+
+  disable_password_authentication = true
+  admin_ssh_key {
+    username   = var.vm_admin_username
+    public_key = var.ssh_public_key
+  }
+
+  source_image_reference {
     publisher = "Canonical"
     offer     = "0001-com-ubuntu-server-jammy"
     sku       = "22_04-lts"
     version   = "latest"
   }
-  storage_os_disk {
-    name              = "myosdisk1"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
   }
-  os_profile {
-    computer_name  = "hostname"
-    admin_username = "testadmin"
-    admin_password = "Password1234!"
+
+  network_interface_ids = [
+    azurerm_network_interface.nic[local.nic_names[count.index]].id
+  ]
+
+  lifecycle {
+    prevent_destroy = true
   }
-  os_profile_linux_config {
-    disable_password_authentication = false
-  }
-  tags = {
-    environment = "staging"
-  }
+
+  tags = merge(local.common_tags, { idx = tostring(count.index) })
 }

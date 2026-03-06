@@ -13,7 +13,7 @@ resource "azurerm_subnet" "internal" {
 }
 
 resource "azurerm_network_interface" "main" {
-  for_each = toset(local.network_interfaces)
+  for_each = toset(local.network_interface_names)
 
   name                = each.value
   location            = azurerm_resource_group.example.location

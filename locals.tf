@@ -1,5 +1,5 @@
 locals {
-  network_interfaces = ["${var.prefix}-nic-one", "${var.prefix}-nic-two"]
+  network_interface_names = ["${var.prefix}-nic-one", "${var.prefix}-nic-two"]
   security_rules = [
     {
       name                       = "Allow-HTTP"

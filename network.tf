@@ -15,17 +15,15 @@ resource "azurerm_subnet" "internal" {
 }
 
 resource "azurerm_network_interface" "main" {
-  count = 2
+  for_each = { for idx, name in local.nic_names : tostring(idx) => name }
 
-  name                = "${var.prefix}${count.index}-nic"
-  location            = azurerm_resource_group.example[count.index].location
-  resource_group_name = azurerm_resource_group.example[count.index].name
+  name                = each.value
+  location            = azurerm_resource_group.example[tonumber(each.key)].location
+  resource_group_name = azurerm_resource_group.example[tonumber(each.key)].name
 
   ip_configuration {
     name                          = "testconfiguration1"
-    subnet_id                     = azurerm_subnet.internal[count.index].id
+    subnet_id                     = azurerm_subnet.internal[tonumber(each.key)].id
     private_ip_address_allocation = "Dynamic"
   }
 }
-
-

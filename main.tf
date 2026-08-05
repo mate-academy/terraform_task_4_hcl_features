@@ -1,20 +1,3 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source = "hashicorp/azurerm"
-      version = "3.105.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-variable "prefix" {
-  default = "tfvmex"
-}
-
 resource "azurerm_resource_group" "example" {
   name     = "${var.prefix}-resources"
   location = "West Europe"
@@ -34,23 +17,46 @@ resource "azurerm_subnet" "internal" {
   address_prefixes     = ["10.0.2.0/24"]
 }
 
+resource "azurerm_network_security_group" "nsg" {
+  name                = "${var.prefix}-nsg"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+
+  dynamic "security_rule" {
+    for_each = local.security_rules
+    content {
+      name                       = security_rule.value.name
+      priority                   = security_rule.value.priority
+      direction                  = security_rule.value.direction
+      access                     = security_rule.value.access
+      protocol                   = security_rule.value.protocol
+      source_port_range          = security_rule.value.source_port_range
+      destination_port_range     = security_rule.value.destination_port_range
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    }
+  }
+}
+
 resource "azurerm_network_interface" "main" {
-  name                = "${var.prefix}-nic"
+  for_each            = toset(local.nic_names)
+  name                = each.key
   location            = azurerm_resource_group.example.location
   resource_group_name = azurerm_resource_group.example.name
 
   ip_configuration {
-    name                          = "testconfiguration1"
+    name                          = "ipconfig-${each.key}"
     subnet_id                     = azurerm_subnet.internal.id
     private_ip_address_allocation = "Dynamic"
   }
 }
 
 resource "azurerm_virtual_machine" "main" {
-  name                  = "${var.prefix}-vm"
+  count                 = var.vm_count
+  name                  = "${var.prefix}-vm-${count.index}"
   location              = azurerm_resource_group.example.location
   resource_group_name   = azurerm_resource_group.example.name
-  network_interface_ids = [azurerm_network_interface.main.id]
+  network_interface_ids = [values(azurerm_network_interface.main)[count.index].id]
   vm_size               = "Standard_DS1_v2"
 
   storage_image_reference {
@@ -59,21 +65,27 @@ resource "azurerm_virtual_machine" "main" {
     sku       = "22_04-lts"
     version   = "latest"
   }
+
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "myosdisk-${count.index}"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
   }
+
   os_profile {
-    computer_name  = "hostname"
+    computer_name  = "hostname-${count.index}"
     admin_username = "testadmin"
     admin_password = "Password1234!"
   }
+
   os_profile_linux_config {
     disable_password_authentication = false
   }
-  tags = {
-    environment = "staging"
+
+  tags = local.common_tags
+
+  lifecycle {
+    prevent_destroy = true
   }
 }

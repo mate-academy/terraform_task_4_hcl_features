@@ -1,14 +1,14 @@
-output "vm_name_uppercase" {
+output "vm_name_upper" {
   value = [for vm in azurerm_virtual_machine.main : upper(vm.name)]
 }
 
-output "joined_tags" {
+output "tags_joined" {
   value = [for vm in azurerm_virtual_machine.main : join("-", [
     vm.tags["environment"],
     vm.tags["project"]
   ])]
 }
 
-output "loop_all_vm" {
+output "vm_ids" {
   value = [for vm in azurerm_virtual_machine.main : vm.id]
 }

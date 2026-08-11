@@ -10,10 +10,15 @@ locals {
       destination_port_range = "22"
     }
   ]
-  network_interface_names = [
-    "web",
-    "app",
-    "db"
-  ]
 
+  network_interface_names = {
+    web = "web"
+    app = "app"
+    db  = "db"
+  }
+
+  nic_assignment = {
+    0 = "web"
+    1 = "app"
+  }
 }

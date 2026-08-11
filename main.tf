@@ -20,7 +20,7 @@ resource "azurerm_subnet" "internal" {
 }
 
 resource "azurerm_network_interface" "main" {
-  for_each = toset(local.network_interface_names)
+  for_each = local.network_interface_names
 
   name                = "${var.prefix}-nic-${each.key}"
   location            = azurerm_resource_group.example[0].location
@@ -38,7 +38,7 @@ resource "azurerm_virtual_machine" "main" {
   name                  = "${var.prefix}-vm-${count.index}"
   location              = azurerm_resource_group.example[0].location
   resource_group_name   = azurerm_resource_group.example[0].name
-  network_interface_ids = [azurerm_network_interface.main["web"].id]
+  network_interface_ids = [azurerm_network_interface.main[local.nic_assignment[count.index]].id]
   vm_size               = "Standard_DS1_v2"
 
   storage_image_reference {
@@ -47,20 +47,24 @@ resource "azurerm_virtual_machine" "main" {
     sku       = "22_04-lts"
     version   = "latest"
   }
+
   storage_os_disk {
     name              = "myosdisk1-${count.index}"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
   }
+
   os_profile {
     computer_name  = "hostname-${count.index}"
     admin_username = "testadmin"
     admin_password = "Password1234!"
   }
+
   os_profile_linux_config {
     disable_password_authentication = false
   }
+
   tags = {
     environment = "staging"
     project     = "devops"

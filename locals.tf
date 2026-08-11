@@ -10,10 +10,10 @@ locals {
       destination_port_range = "22"
     }
   ]
-    network_interface_names = [
-        "web",
-        "app",
-        "db"
+  network_interface_names = [
+    "web",
+    "app",
+    "db"
   ]
 
 }

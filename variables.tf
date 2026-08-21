@@ -1,31 +1,3 @@
 variable "prefix" {
   default = "tfvmex"
 }
-
-variable "networks_interfaces" {
-  default = ["nic_1", "nic_2", "nic_3"]
-}
-
-variable "security_rules" {
-  type = list(map(string))
-  default = [
-    {
-      name                   = "rule_1"
-      priority               = "100"
-      direction              = "Inbound"
-      access                 = "Allow"
-      protocol               = "Tcp"
-      source_port_range      = "*"
-      destination_port_range = "*"
-    },
-    {
-      name                   = "rule_2"
-      priority               = "200"
-      direction              = "Inbound"
-      access                 = "Allow"
-      protocol               = "Tcp"
-      source_port_range      = "*"
-      destination_port_range = "*"
-    }
-  ]
-}

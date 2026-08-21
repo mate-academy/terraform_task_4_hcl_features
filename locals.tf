@@ -1,5 +1,5 @@
 locals {
-  networks_interfaces = ["nic_1", "nic_2", "nic_3"]
+  network_interface_names = ["nic_1", "nic_2", "nic_3"]
   security_rules = [
     {
       name                   = "rule_1"

@@ -3,7 +3,7 @@ output "vm_names_uppercase" {
 }
 
 output "joined_tags" {
-  value = join(", ", values(azurerm_virtual_machine.main["nic-1"].tags))
+  value = join(", ", values(values(azurerm_virtual_machine.main)[0].tags))
 }
 
 output "vm_ids" {

@@ -1,10 +1,15 @@
 resource "azurerm_virtual_machine" "main" {
-  count                 = 3
-  name                  = "${var.prefix}-vm-${count.index}"
-  location              = azurerm_resource_group.example.location
-  resource_group_name   = azurerm_resource_group.example.name
-  network_interface_ids = [azurerm_network_interface.main[local.nic_names[count.index]].id]
-  vm_size               = "Standard_DS1_v2"
+  for_each = toset(local.nic_names)
+
+  name                = "${var.prefix}-vm-${each.key}"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+
+  network_interface_ids = [
+    azurerm_network_interface.main[each.key].id
+  ]
+
+  vm_size = "Standard_DS1_v2"
 
   storage_image_reference {
     publisher = "Canonical"
@@ -12,20 +17,24 @@ resource "azurerm_virtual_machine" "main" {
     sku       = "22_04-lts"
     version   = "latest"
   }
+
   storage_os_disk {
-    name              = "myosdisk-${count.index}"
+    name              = "myosdisk-${each.key}"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
   }
+
   os_profile {
-    computer_name  = "hostname"
+    computer_name  = "hostname-${each.key}"
     admin_username = "testadmin"
     admin_password = "Password1234!"
   }
+
   os_profile_linux_config {
     disable_password_authentication = false
   }
+
   tags = {
     environment = "staging"
     project     = "terraform"

@@ -1,22 +1,6 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source = "hashicorp/azurerm"
-      version = "3.105.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-variable "prefix" {
-  default = "tfvmex"
-}
-
 resource "azurerm_resource_group" "example" {
-  name     = "${var.prefix}-resources"
+  count    = 3
+  name     = "${var.prefix}-${count.index}-resources"
   location = "West Europe"
 }
 
@@ -35,9 +19,12 @@ resource "azurerm_subnet" "internal" {
 }
 
 resource "azurerm_network_interface" "main" {
-  name                = "${var.prefix}-nic"
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
+
+  for_each = toset(local.names)
+
+  name                = each.key
+  location            = azurerm_resource_group.example[0].location
+  resource_group_name = azurerm_resource_group.example[0].name
 
   ip_configuration {
     name                          = "testconfiguration1"
@@ -47,10 +34,13 @@ resource "azurerm_network_interface" "main" {
 }
 
 resource "azurerm_virtual_machine" "main" {
-  name                  = "${var.prefix}-vm"
-  location              = azurerm_resource_group.example.location
-  resource_group_name   = azurerm_resource_group.example.name
-  network_interface_ids = [azurerm_network_interface.main.id]
+
+  count = length(local.names)
+
+  name                  = "${var.prefix}-vm-${count.index}"
+  location              = azurerm_resource_group.example[0].location
+  resource_group_name   = azurerm_resource_group.example[0].name
+  network_interface_ids = [azurerm_network_interface.main[local.names[count.index]].id]
   vm_size               = "Standard_DS1_v2"
 
   storage_image_reference {
@@ -75,5 +65,30 @@ resource "azurerm_virtual_machine" "main" {
   }
   tags = {
     environment = "staging"
+  }
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_network_security_group" "main" {
+  name                = "${var.prefix}-nsg"
+  location            = azurerm_resource_group.example[0].location
+  resource_group_name = azurerm_resource_group.example[0].name
+
+  dynamic "security_rule" {
+    for_each = local.nsg_rules
+
+    content {
+      name                       = security_rule.value.name
+      priority                   = security_rule.value.priority
+      direction                  = security_rule.value.direction
+      access                     = security_rule.value.access
+      protocol                   = security_rule.value.protocol
+      source_port_range          = security_rule.value.source_port_range
+      destination_port_range     = security_rule.value.destination_port_range
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    }
   }
 }

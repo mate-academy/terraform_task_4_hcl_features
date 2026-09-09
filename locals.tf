@@ -1,5 +1,5 @@
 locals {
-  names = ["nic1", "nic2", "nic3"]
+  network_interface_names = ["nic1", "nic2", "nic3"]
 
   nsg_rules = [
     {

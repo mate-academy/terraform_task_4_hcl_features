@@ -1,30 +1,6 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source = "hashicorp/azurerm"
-      version = "3.105.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-variable "prefix" {
-  default = "tfvmex"
-}
-
 resource "azurerm_resource_group" "example" {
   name     = "${var.prefix}-resources"
-  location = "West Europe"
-}
-
-resource "azurerm_virtual_network" "main" {
-  name                = "${var.prefix}-network"
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
+  location = var.location
 }
 
 resource "azurerm_subnet" "internal" {
@@ -34,24 +10,17 @@ resource "azurerm_subnet" "internal" {
   address_prefixes     = ["10.0.2.0/24"]
 }
 
-resource "azurerm_network_interface" "main" {
-  name                = "${var.prefix}-nic"
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
-
-  ip_configuration {
-    name                          = "testconfiguration1"
-    subnet_id                     = azurerm_subnet.internal.id
-    private_ip_address_allocation = "Dynamic"
-  }
-}
-
 resource "azurerm_virtual_machine" "main" {
-  name                  = "${var.prefix}-vm"
+  count                 = 3
+  name                  = "${var.prefix}-vm-${count.index}"
   location              = azurerm_resource_group.example.location
   resource_group_name   = azurerm_resource_group.example.name
-  network_interface_ids = [azurerm_network_interface.main.id]
+  network_interface_ids = [azurerm_network_interface.main[local.network_interface_names[count.index]].id]
   vm_size               = "Standard_DS1_v2"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 
   storage_image_reference {
     publisher = "Canonical"
@@ -60,13 +29,13 @@ resource "azurerm_virtual_machine" "main" {
     version   = "latest"
   }
   storage_os_disk {
-    name              = "myosdisk1"
+    name              = "myosdisk1-${count.index}"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Standard_LRS"
   }
   os_profile {
-    computer_name  = "hostname"
+    computer_name  = "hostname-${count.index}"
     admin_username = "testadmin"
     admin_password = "Password1234!"
   }

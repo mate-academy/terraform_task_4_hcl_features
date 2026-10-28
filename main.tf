@@ -1,57 +1,47 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source = "hashicorp/azurerm"
-      version = "3.105.0"
-    }
-  }
+resource "azurerm_resource_group" "task4" {
+  count    = 2
+  name     = "${var.prefix}-${count.index}-resources"
+  location = "Poland Central"
 }
 
-provider "azurerm" {
-  features {}
-}
-
-variable "prefix" {
-  default = "tfvmex"
-}
-
-resource "azurerm_resource_group" "example" {
-  name     = "${var.prefix}-resources"
-  location = "West Europe"
-}
-
-resource "azurerm_virtual_network" "main" {
+resource "azurerm_virtual_network" "task4" {
   name                = "${var.prefix}-network"
   address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.task4[0].location
+  resource_group_name = azurerm_resource_group.task4[0].name
 }
 
-resource "azurerm_subnet" "internal" {
+resource "azurerm_subnet" "task4" {
   name                 = "internal"
-  resource_group_name  = azurerm_resource_group.example.name
-  virtual_network_name = azurerm_virtual_network.main.name
+  resource_group_name  = azurerm_resource_group.task4[0].name
+  virtual_network_name = azurerm_virtual_network.task4.name
   address_prefixes     = ["10.0.2.0/24"]
 }
 
-resource "azurerm_network_interface" "main" {
-  name                = "${var.prefix}-nic"
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
+resource "azurerm_network_interface" "task4" {
+
+  for_each = toset(local.network_interface_names)
+
+  name                = each.key
+  location            = azurerm_resource_group.task4[0].location
+  resource_group_name = azurerm_resource_group.task4[0].name
 
   ip_configuration {
     name                          = "testconfiguration1"
-    subnet_id                     = azurerm_subnet.internal.id
+    subnet_id                     = azurerm_subnet.task4.id
     private_ip_address_allocation = "Dynamic"
   }
 }
 
-resource "azurerm_virtual_machine" "main" {
-  name                  = "${var.prefix}-vm"
-  location              = azurerm_resource_group.example.location
-  resource_group_name   = azurerm_resource_group.example.name
-  network_interface_ids = [azurerm_network_interface.main.id]
-  vm_size               = "Standard_DS1_v2"
+resource "azurerm_virtual_machine" "task4" {
+
+  count = length(local.network_interface_names)
+
+  name                  = "${var.prefix}-vm-${count.index}"
+  location              = azurerm_resource_group.task4[0].location
+  resource_group_name   = azurerm_resource_group.task4[0].name
+  network_interface_ids = [azurerm_network_interface.task4[local.network_interface_names[count.index]].id]
+  vm_size               = "Standard_B2ats_v2"
 
   storage_image_reference {
     publisher = "Canonical"
@@ -75,5 +65,30 @@ resource "azurerm_virtual_machine" "main" {
   }
   tags = {
     environment = "staging"
+  }
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_network_security_group" "task4" {
+  name                = "${var.prefix}-nsg"
+  location            = azurerm_resource_group.task4[0].location
+  resource_group_name = azurerm_resource_group.task4[0].name
+
+  dynamic "security_rule" {
+    for_each = local.nsg_rules
+
+    content {
+      name                       = security_rule.value.name
+      priority                   = security_rule.value.priority
+      direction                  = security_rule.value.direction
+      access                     = security_rule.value.access
+      protocol                   = security_rule.value.protocol
+      source_port_range          = security_rule.value.source_port_range
+      destination_port_range     = security_rule.value.destination_port_range
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    }
   }
 }

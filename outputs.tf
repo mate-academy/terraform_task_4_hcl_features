@@ -1,7 +1,5 @@
 output "vm_name_uppercase" {
-  value = [
-    for vm in azurerm_virtual_machine.main : upper(vm.name)
-  ]
+  value = upper(azurerm_virtual_machine.main[0].name)
 }
 
 output "tags_string" {

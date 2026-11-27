@@ -1,2 +1,2 @@
-.terraformgit log --oneline --stat -- .terraform | Select-String -Pattern "^[0-9a-f]{7} "
-git status
+
+.terraform/

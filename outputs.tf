@@ -7,7 +7,5 @@ output "tags_string" {
 }
 
 output "vm_ids" {
-  value = [
-    for vm in azurerm_virtual_machine.main : vm.id
-  ]
+  value = [for vm in azurerm_virtual_machine.main : vm.id]
 }
